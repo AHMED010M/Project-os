@@ -113,13 +113,115 @@ void MainWindow::setup_ui() {
 }
 
 void MainWindow::apply_dark_theme() {
-    QString dark_style = 
+    QString navy_theme = 
+        "QMainWindow {"
+        "    background-color: #0a1929;"
+        "}"
+        "QWidget {"
+        "    background-color: #0a1929;"
+        "    color: #e3f2fd;"
+        "}"
+        "QGroupBox {"
+        "    background-color: #132f4c;"
+        "    border: 2px solid #1e4976;"
+        "    border-radius: 8px;"
+        "    margin-top: 10px;"
+        "    padding-top: 15px;"
+        "    color: #90caf9;"
+        "    font-weight: bold;"
+        "}"
+        "QGroupBox::title {"
+        "    subcontrol-origin: margin;"
+        "    left: 10px;"
+        "    padding: 0 5px;"
+        "}"
+        "QLineEdit {"
+        "    background-color: #1a3a52;"
+        "    color: #e3f2fd;"
+        "    border: 2px solid #2e5a7d;"
+        "    border-radius: 5px;"
+        "    padding: 5px;"
+        "    selection-background-color: #1e88e5;"
+        "}"
+        "QLineEdit:focus {"
+        "    border: 2px solid #42a5f5;"
+        "}"
         "QTextEdit {"
-        "    background-color: #1e1e1e;"
-        "    color: #e0e0e0;"
-        "    border: 1px solid #3f3f3f;"
+        "    background-color: #0d2137;"
+        "    color: #e3f2fd;"
+        "    border: 2px solid #1e4976;"
+        "    border-radius: 5px;"
+        "    selection-background-color: #1e88e5;"
+        "}"
+        "QPushButton {"
+        "    background-color: #1565c0;"
+        "    color: white;"
+        "    border: none;"
+        "    border-radius: 5px;"
+        "    padding: 8px 15px;"
+        "    font-weight: bold;"
+        "}"
+        "QPushButton:hover {"
+        "    background-color: #1976d2;"
+        "}"
+        "QPushButton:pressed {"
+        "    background-color: #0d47a1;"
+        "}"
+        "QPushButton:disabled {"
+        "    background-color: #1e3a52;"
+        "    color: #546e7a;"
+        "}"
+        "QComboBox {"
+        "    background-color: #1a3a52;"
+        "    color: #e3f2fd;"
+        "    border: 2px solid #2e5a7d;"
+        "    border-radius: 5px;"
+        "    padding: 5px;"
+        "}"
+        "QComboBox:hover {"
+        "    border: 2px solid #42a5f5;"
+        "}"
+        "QComboBox::drop-down {"
+        "    border: none;"
+        "    width: 30px;"
+        "}"
+        "QComboBox::down-arrow {"
+        "    image: none;"
+        "    border-left: 5px solid transparent;"
+        "    border-right: 5px solid transparent;"
+        "    border-top: 5px solid #90caf9;"
+        "}"
+        "QComboBox QAbstractItemView {"
+        "    background-color: #132f4c;"
+        "    color: #e3f2fd;"
+        "    selection-background-color: #1565c0;"
+        "    border: 2px solid #1e4976;"
+        "}"
+        "QLabel {"
+        "    color: #90caf9;"
+        "    background-color: transparent;"
+        "}"
+        "QScrollBar:vertical {"
+        "    background-color: #0d2137;"
+        "    width: 12px;"
+        "    border: none;"
+        "}"
+        "QScrollBar::handle:vertical {"
+        "    background-color: #2e5a7d;"
+        "    border-radius: 6px;"
+        "    min-height: 20px;"
+        "}"
+        "QScrollBar::handle:vertical:hover {"
+        "    background-color: #42a5f5;"
+        "}"
+        "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {"
+        "    height: 0px;"
+        "}"
+        "QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {"
+        "    background: none;"
         "}";
-    message_display_->setStyleSheet(dark_style);
+    
+    this->setStyleSheet(navy_theme);
 }
 
 void MainWindow::on_mode_changed(int index) {
@@ -259,7 +361,7 @@ void MainWindow::on_shm_error(const QString& error) {
 
 void MainWindow::update_connection_ui() {
     if (is_connected_) {
-        status_label_->setText("Status: <span style='color: green;'>Connected</span>");
+        status_label_->setText("Status: <span style='color: #4caf50;'>Connected</span>");
         connect_button_->setText("Disconnect");
         send_button_->setEnabled(true);
         
@@ -269,7 +371,7 @@ void MainWindow::update_connection_ui() {
         shm_name_input_->setEnabled(false);
         username_input_->setEnabled(false);
     } else {
-        status_label_->setText("Status: <span style='color: red;'>Disconnected</span>");
+        status_label_->setText("Status: <span style='color: #f44336;'>Disconnected</span>");
         connect_button_->setText("Connect");
         send_button_->setEnabled(false);
         
@@ -307,7 +409,9 @@ void MainWindow::update_mode_ui() {
 void MainWindow::display_message(const QString& username,
                                 const QString& timestamp,
                                 const QString& text) {
-    QString formatted = QString("[%1] %2: %3")
+    QString formatted = QString("<span style='color: #64b5f6;'>[%1]</span> "
+                               "<span style='color: #81c784; font-weight: bold;'>%2:</span> "
+                               "<span style='color: #e3f2fd;'>%3</span>")
                        .arg(timestamp)
                        .arg(username)
                        .arg(text);
@@ -318,7 +422,7 @@ void MainWindow::display_message(const QString& username,
 }
 
 void MainWindow::display_system_message(const QString& text) {
-    QString formatted = QString("<span style='color: #888;'>*** %1 ***</span>")
+    QString formatted = QString("<span style='color: #90caf9; font-style: italic;'>*** %1 ***</span>")
                        .arg(text);
     message_display_->append(formatted);
     
