@@ -47,7 +47,7 @@ bool ShmClient::join_room(const QString& shm_name, const QString& username) {
     last_read_index_ = shm_buffer_->read_index;
     read_thread_ = std::thread(&ShmClient::read_loop, this);
 
-    emit joined();
+    emit connected();
     return true;
 }
 
@@ -62,7 +62,7 @@ void ShmClient::leave_room() {
     }
 
     cleanup_shm();
-    emit left();
+    emit disconnected();
 }
 
 bool ShmClient::send_message(const QString& text) {

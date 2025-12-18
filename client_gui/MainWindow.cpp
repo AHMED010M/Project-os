@@ -1,7 +1,3 @@
-// MIT License
-// Multi-threaded Chat System - Main Window Implementation
-// Copyright (c) 2025
-
 #include "MainWindow.h"
 #include "SocketClient.h"
 #include "ShmClient.h"
@@ -21,20 +17,18 @@ MainWindow::MainWindow(QWidget* parent)
 
 MainWindow::~MainWindow() {
     if (socket_client_) {
-        socket_client_->disconnect_from_server();
+        socket_client_->disconnect();
     }
     if (shm_client_) {
-        shm_client_->disconnect();
+        shm_client_->leave_room();
     }
 }
 
 void MainWindow::setup_ui() {
-    // Central widget
     central_widget_ = new QWidget(this);
     setCentralWidget(central_widget_);
     main_layout_ = new QVBoxLayout(central_widget_);
 
-    // Mode selection group
     mode_group_ = new QGroupBox("Connection Mode", this);
     QHBoxLayout* mode_layout = new QHBoxLayout(mode_group_);
     mode_combo_ = new QComboBox(this);
@@ -45,11 +39,9 @@ void MainWindow::setup_ui() {
     mode_layout->addStretch();
     main_layout_->addWidget(mode_group_);
 
-    // Connection settings group
     connection_group_ = new QGroupBox("Connection Settings", this);
     QVBoxLayout* conn_layout = new QVBoxLayout(connection_group_);
     
-    // Socket settings
     QHBoxLayout* ip_layout = new QHBoxLayout();
     ip_label_ = new QLabel("IP Address:", this);
     ip_input_ = new QLineEdit(this);
@@ -68,7 +60,6 @@ void MainWindow::setup_ui() {
     port_layout->addWidget(port_input_);
     conn_layout->addLayout(port_layout);
 
-    // Shared memory settings
     QHBoxLayout* shm_layout = new QHBoxLayout();
     shm_name_label_ = new QLabel("SHM Name:", this);
     shm_name_input_ = new QLineEdit(this);
@@ -78,7 +69,6 @@ void MainWindow::setup_ui() {
     shm_layout->addWidget(shm_name_input_);
     conn_layout->addLayout(shm_layout);
 
-    // Username
     QHBoxLayout* user_layout = new QHBoxLayout();
     user_layout->addWidget(new QLabel("Username:", this));
     username_input_ = new QLineEdit(this);
@@ -88,7 +78,6 @@ void MainWindow::setup_ui() {
 
     main_layout_->addWidget(connection_group_);
 
-    // Status and connect button
     QHBoxLayout* status_layout = new QHBoxLayout();
     status_label_ = new QLabel("Status: Disconnected", this);
     connect_button_ = new QPushButton("Connect", this);
@@ -98,13 +87,11 @@ void MainWindow::setup_ui() {
     status_layout->addWidget(connect_button_);
     main_layout_->addLayout(status_layout);
 
-    // Message display
     message_display_ = new QTextEdit(this);
     message_display_->setReadOnly(true);
     message_display_->setFont(QFont("Monospace", 11));
     main_layout_->addWidget(message_display_, 1);
 
-    // Message input
     QHBoxLayout* input_layout = new QHBoxLayout();
     message_input_ = new QLineEdit(this);
     message_input_->setPlaceholderText("Type your message here...");
@@ -115,7 +102,6 @@ void MainWindow::setup_ui() {
     input_layout->addWidget(send_button_);
     main_layout_->addLayout(input_layout);
 
-    // Connect signals
     connect(mode_combo_, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &MainWindow::on_mode_changed);
     connect(connect_button_, &QPushButton::clicked,
@@ -127,7 +113,6 @@ void MainWindow::setup_ui() {
 }
 
 void MainWindow::apply_dark_theme() {
-    // Dark theme for message display
     QString dark_style = 
         "QTextEdit {"
         "    background-color: #1e1e1e;"
@@ -144,14 +129,12 @@ void MainWindow::on_mode_changed(int index) {
 
 void MainWindow::on_connect_clicked() {
     if (is_connected_) {
-        // Disconnect
         if (current_mode_ == SOCKET && socket_client_) {
-            socket_client_->disconnect_from_server();
+            socket_client_->disconnect();
         } else if (current_mode_ == SHARED_MEMORY && shm_client_) {
-            shm_client_->disconnect();
+            shm_client_->leave_room();
         }
     } else {
-        // Connect
         QString username = username_input_->text().trimmed();
         if (username.isEmpty()) {
             QMessageBox::warning(this, "Error", "Please enter a username");
@@ -168,7 +151,6 @@ void MainWindow::on_connect_clicked() {
                 return;
             }
 
-            // Create socket client if needed
             if (!socket_client_) {
                 socket_client_ = std::make_unique<SocketClient>();
                 connect(socket_client_.get(), &SocketClient::message_received,
@@ -190,7 +172,6 @@ void MainWindow::on_connect_clicked() {
                 return;
             }
 
-            // Create shm client if needed
             if (!shm_client_) {
                 shm_client_ = std::make_unique<ShmClient>();
                 connect(shm_client_.get(), &ShmClient::message_received,
@@ -203,7 +184,7 @@ void MainWindow::on_connect_clicked() {
                        this, &MainWindow::on_shm_error);
             }
 
-            shm_client_->connect(shm_name, username);
+            shm_client_->join_room(shm_name, username);
         }
     }
 }
@@ -282,7 +263,6 @@ void MainWindow::update_connection_ui() {
         connect_button_->setText("Disconnect");
         send_button_->setEnabled(true);
         
-        // Disable connection settings
         mode_combo_->setEnabled(false);
         ip_input_->setEnabled(false);
         port_input_->setEnabled(false);
@@ -293,7 +273,6 @@ void MainWindow::update_connection_ui() {
         connect_button_->setText("Connect");
         send_button_->setEnabled(false);
         
-        // Enable connection settings
         mode_combo_->setEnabled(true);
         username_input_->setEnabled(true);
         update_mode_ui();
@@ -334,7 +313,6 @@ void MainWindow::display_message(const QString& username,
                        .arg(text);
     message_display_->append(formatted);
     
-    // Auto-scroll to bottom
     QScrollBar* scrollbar = message_display_->verticalScrollBar();
     scrollbar->setValue(scrollbar->maximum());
 }
@@ -344,7 +322,6 @@ void MainWindow::display_system_message(const QString& text) {
                        .arg(text);
     message_display_->append(formatted);
     
-    // Auto-scroll to bottom
     QScrollBar* scrollbar = message_display_->verticalScrollBar();
     scrollbar->setValue(scrollbar->maximum());
 }
