@@ -1,8 +1,3 @@
-/*
- * MIT License
- * Copyright (c) 2025 OS Chat Project
- */
-
 #include "ShmClient.h"
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -35,7 +30,6 @@ bool ShmClient::join_room(const QString& shm_name, const QString& username) {
         return false;
     }
 
-    // Open/create semaphores
     QString write_sem_name = shm_name + "_write";
     QString read_sem_name = shm_name + "_read";
 
@@ -77,7 +71,7 @@ bool ShmClient::send_message(const QString& text) {
     sem_wait((sem_t*)write_sem_);
 
     Message msg;
-    strncpy(msg.user, username_.toStdString().c_str(), MAX_USERNAME_LEN - 1);
+    strncpy(msg.username, username_.toStdString().c_str(), MAX_USERNAME_LEN - 1);
     strncpy(msg.timestamp, Message::get_current_timestamp().c_str(), MAX_TIMESTAMP_LEN - 1);
     strncpy(msg.text, text.toStdString().c_str(), MAX_MESSAGE_LEN - 1);
 
@@ -99,10 +93,9 @@ void ShmClient::read_loop() {
             size_t read_idx = last_read_index_ % SHM_BUFFER_SIZE;
             Message msg = shm_buffer_->messages[read_idx];
 
-            // Don't show our own messages
-            if (QString::fromUtf8(msg.user) != username_) {
+            if (QString::fromUtf8(msg.username) != username_) {
                 emit message_received(
-                    QString::fromUtf8(msg.user),
+                    QString::fromUtf8(msg.username),
                     QString::fromUtf8(msg.timestamp),
                     QString::fromUtf8(msg.text)
                 );
@@ -113,13 +106,11 @@ void ShmClient::read_loop() {
 
         sem_post((sem_t*)read_sem_);
 
-        // Sleep briefly to avoid busy-waiting
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }
 
 bool ShmClient::create_or_open_shm(const QString& shm_name) {
-    // Open or create shared memory
     shm_fd_ = shm_open(shm_name.toStdString().c_str(), 
                        O_CREAT | O_RDWR, 
                        S_IRUSR | S_IWUSR);
@@ -128,13 +119,11 @@ bool ShmClient::create_or_open_shm(const QString& shm_name) {
         return false;
     }
 
-    // Set size
     if (ftruncate(shm_fd_, sizeof(ShmBuffer)) < 0) {
         close(shm_fd_);
         return false;
     }
 
-    // Map shared memory
     shm_buffer_ = (ShmBuffer*)mmap(nullptr, sizeof(ShmBuffer),
                                     PROT_READ | PROT_WRITE,
                                     MAP_SHARED, shm_fd_, 0);
@@ -144,9 +133,8 @@ bool ShmClient::create_or_open_shm(const QString& shm_name) {
         return false;
     }
 
-    // Initialize if new
     if (shm_buffer_->write_index == 0 && shm_buffer_->read_index == 0) {
-        memset(shm_buffer_, 0, sizeof(ShmBuffer));
+        std::memset(shm_buffer_, 0, sizeof(ShmBuffer));
     }
 
     return true;
