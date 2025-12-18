@@ -1,10 +1,3 @@
-/*
- * MIT License
- * Copyright (c) 2025 OS Chat Project
- *
- * Shared Memory Client (System B - Local IPC)
- */
-
 #ifndef SHM_CLIENT_H
 #define SHM_CLIENT_H
 
@@ -14,8 +7,7 @@
 #include <thread>
 #include "../shared/protocol.h"
 
-// Shared memory ring buffer configuration
-const size_t SHM_BUFFER_SIZE = 64;  // Number of message slots
+const size_t SHM_BUFFER_SIZE = 64;
 
 struct ShmBuffer {
     Message messages[SHM_BUFFER_SIZE];
@@ -30,17 +22,16 @@ public:
     ShmClient(QObject* parent = nullptr);
     ~ShmClient();
 
-    // Join shared memory room
     bool join_room(const QString& shm_name, const QString& username);
-
-    // Leave shared memory room
     void leave_room();
-
-    // Check if joined
     bool is_joined() const { return joined_; }
-
-    // Send a message
     bool send_message(const QString& text);
+
+signals:
+    void message_received(QString user, QString timestamp, QString text);
+    void connected();
+    void disconnected();
+    void error_occurred(QString error_msg);
 
 private:
     void read_loop();
@@ -57,15 +48,8 @@ private:
     std::atomic<bool> should_stop_;
     std::thread read_thread_;
 
-    // Semaphores for synchronization
-    void* write_sem_;  // Semaphore for write access
-    void* read_sem_;   // Semaphore for read access
-
-signals:
-    void joined();
-    void left();
-    void message_received(QString user, QString timestamp, QString text);
-    void error_occurred(QString error_msg);
+    void* write_sem_;
+    void* read_sem_;
 };
 
-#endif  // SHM_CLIENT_H
+#endif
