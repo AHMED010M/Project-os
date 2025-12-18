@@ -1,10 +1,3 @@
-/*
- * MIT License
- * Copyright (c) 2025 OS Chat Project
- *
- * Basic functionality tests
- */
-
 #include "../shared/protocol.h"
 #include "../shared/common.h"
 #include <iostream>
@@ -19,11 +12,11 @@ void test_message_creation() {
     strncpy(msg.text, "Hello, World!", MAX_MESSAGE_LEN - 1);
     strncpy(msg.timestamp, Message::get_current_timestamp().c_str(), MAX_TIMESTAMP_LEN - 1);
     
-    assert(std::string(msg.user) == "TestUser");
-    assert(std::string(msg.text) == "Hello, World!");
+    assert(strcmp(msg.user, "TestUser") == 0);
+    assert(strcmp(msg.text, "Hello, World!") == 0);
     assert(strlen(msg.timestamp) > 0);
     
-    std::cout << "  ✓ Message creation test passed" << std::endl;
+    std::cout << "  Message creation test passed" << std::endl;
 }
 
 void test_timestamp_generation() {
@@ -34,10 +27,10 @@ void test_timestamp_generation() {
     
     assert(!ts1.empty());
     assert(!ts2.empty());
-    assert(ts1.length() >= 19);  // ISO 8601 format minimum length
+    assert(ts1.length() >= 19);
     
-    std::cout << "  ✓ Timestamp: " << ts1 << std::endl;
-    std::cout << "  ✓ Timestamp generation test passed" << std::endl;
+    std::cout << "  Timestamp: " << ts1 << std::endl;
+    std::cout << "  Timestamp generation test passed" << std::endl;
 }
 
 void test_message_size() {
@@ -46,10 +39,9 @@ void test_message_size() {
     size_t msg_size = sizeof(Message);
     std::cout << "  Message size: " << msg_size << " bytes" << std::endl;
     
-    // Ensure message is not too large for network transmission
-    assert(msg_size < 1024);  // Should be less than 1KB
+    assert(msg_size < 1024);
     
-    std::cout << "  ✓ Message size test passed" << std::endl;
+    std::cout << "  Message size test passed" << std::endl;
 }
 
 void test_max_lengths() {
@@ -57,19 +49,17 @@ void test_max_lengths() {
     
     Message msg;
     
-    // Test username max length
     std::string long_username(MAX_USERNAME_LEN + 10, 'A');
     strncpy(msg.user, long_username.c_str(), MAX_USERNAME_LEN - 1);
     msg.user[MAX_USERNAME_LEN - 1] = '\0';
     assert(strlen(msg.user) < MAX_USERNAME_LEN);
     
-    // Test message text max length
     std::string long_text(MAX_MESSAGE_LEN + 10, 'B');
     strncpy(msg.text, long_text.c_str(), MAX_MESSAGE_LEN - 1);
     msg.text[MAX_MESSAGE_LEN - 1] = '\0';
     assert(strlen(msg.text) < MAX_MESSAGE_LEN);
     
-    std::cout << "  ✓ Max lengths test passed" << std::endl;
+    std::cout << "  Max lengths test passed" << std::endl;
 }
 
 void test_message_copy() {
@@ -82,17 +72,17 @@ void test_message_copy() {
     
     Message msg2 = msg1;
     
-    assert(std::string(msg2.user) == "Alice");
-    assert(std::string(msg2.text) == "Test message");
-    assert(std::string(msg2.timestamp) == "2025-12-18T12:00:00Z");
+    assert(strcmp(msg2.user, "Alice") == 0);
+    assert(strcmp(msg2.text, "Test message") == 0);
+    assert(strcmp(msg2.timestamp, "2025-12-18T12:00:00Z") == 0);
     
-    std::cout << "  ✓ Message copy test passed" << std::endl;
+    std::cout << "  Message copy test passed" << std::endl;
 }
 
 int main() {
-    std::cout << "=" << std::string(50, '=') << std::endl;
+    std::cout << "==================================================" << std::endl;
     std::cout << "OS Chat Project - Basic Tests" << std::endl;
-    std::cout << "=" << std::string(50, '=') << std::endl << std::endl;
+    std::cout << "==================================================" << std::endl << std::endl;
     
     try {
         test_message_creation();
@@ -102,9 +92,9 @@ int main() {
         test_message_copy();
         
         std::cout << std::endl;
-        std::cout << "=" << std::string(50, '=') << std::endl;
-        std::cout << "All tests passed! ✓" << std::endl;
-        std::cout << "=" << std::string(50, '=') << std::endl;
+        std::cout << "==================================================" << std::endl;
+        std::cout << "All tests passed!" << std::endl;
+        std::cout << "==================================================" << std::endl;
         
         return 0;
     } catch (const std::exception& e) {
