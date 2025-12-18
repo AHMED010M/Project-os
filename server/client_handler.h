@@ -12,8 +12,8 @@
 class ChatServer;
 
 /**
- * Handles a single client connection
- * Runs in its own thread
+ * Handles a single client connection in a separate thread
+ * Receives messages and broadcasts them to other clients
  */
 class ClientHandler {
 public:
@@ -21,45 +21,39 @@ public:
      * Constructor
      * @param socket_fd Client socket file descriptor
      * @param client_id Unique client identifier
-     * @param server Pointer to server instance
+     * @param server Pointer to parent server
      */
     ClientHandler(int socket_fd, int client_id, ChatServer* server);
 
     /**
-     * Destructor - ensures cleanup
+     * Destructor
      */
     ~ClientHandler();
 
     /**
-     * Main entry point for client handler thread
+     * Main thread function
      * Receives username, then enters message loop
      */
     void run();
 
 private:
-    int socket_fd_;                     // Client socket
-    int client_id_;                     // Client ID
-    ChatServer* server_;                // Server instance
-    std::atomic<bool> should_stop_;     // Stop flag
-    std::string username_;              // Client username
-
     /**
-     * Receive and validate username
-     * First message from client must be username
-     * @return true if username received successfully
+     * Receive and validate username (first message)
+     * @return true on success, false on error
      */
     bool receive_username();
 
     /**
-     * Main message loop
+     * Message receiving loop
      * Receives messages and broadcasts them
      */
     void message_loop();
 
-    /**
-     * Cleanup resources
-     */
-    void cleanup();
+    int socket_fd_;
+    int client_id_;
+    ChatServer* server_;
+    std::string username_;
+    std::atomic<bool> should_stop_;
 };
 
 #endif // CLIENT_HANDLER_H

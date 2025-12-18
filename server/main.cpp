@@ -12,12 +12,10 @@ ChatServer* g_server = nullptr;
 
 /**
  * Signal handler for graceful shutdown
- * Handles SIGINT (Ctrl+C)
  */
-void signal_handler(int signal) {
-    if (signal == SIGINT) {
-        std::cout << "\n";
-        LOG_INFO("Received SIGINT, shutting down gracefully...");
+void signal_handler(int signum) {
+    if (signum == SIGINT) {
+        LOG_INFO("\nReceived SIGINT, shutting down gracefully...");
         if (g_server) {
             g_server->stop();
         }
@@ -34,30 +32,38 @@ int main(int argc, char* argv[]) {
         host = argv[1];
     }
     if (argc > 2) {
-        port = std::stoi(argv[2]);
+        port = std::atoi(argv[2]);
+        if (port <= 0 || port > 65535) {
+            LOG_ERROR("Invalid port number: " << port);
+            return 1;
+        }
     }
 
     // Print banner
-    std::cout << "========================================" << std::endl;
-    std::cout << "   Multi-threaded Chat Server v1.0    " << std::endl;
-    std::cout << "========================================" << std::endl;
-    std::cout << std::endl;
+    std::cout << "\n";
+    std::cout << "╔════════════════════════════════════════╗\n";
+    std::cout << "║     Multi-threaded Chat Server        ║\n";
+    std::cout << "║           Version 1.0.0               ║\n";
+    std::cout << "╚════════════════════════════════════════╝\n";
+    std::cout << "\n";
 
     // Create server instance
-    ChatServer server(host, port);
-    g_server = &server;
+    g_server = new ChatServer(host, port);
 
     // Setup signal handler
     std::signal(SIGINT, signal_handler);
 
     // Start server
-    LOG_INFO("Chat server starting on " << host << ":" << port << "...");
-    
-    if (!server.start()) {
+    if (!g_server->start()) {
         LOG_ERROR("Failed to start server");
+        delete g_server;
         return 1;
     }
 
-    LOG_INFO("Server stopped successfully");
+    // Cleanup
+    delete g_server;
+    g_server = nullptr;
+
+    LOG_INFO("Server shutdown complete");
     return 0;
 }

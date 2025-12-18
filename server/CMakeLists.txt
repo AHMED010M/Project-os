@@ -9,7 +9,7 @@ add_executable(chat_server
     client_handler.cpp
 )
 
-# Include directories
+# Include shared directory
 target_include_directories(chat_server PRIVATE
     ${CMAKE_SOURCE_DIR}/shared
 )
