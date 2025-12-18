@@ -8,11 +8,11 @@ void test_message_creation() {
     std::cout << "Testing Message creation..." << std::endl;
     
     Message msg;
-    strncpy(msg.user, "TestUser", MAX_USERNAME_LEN - 1);
+    strncpy(msg.username, "TestUser", MAX_USERNAME_LEN - 1);
     strncpy(msg.text, "Hello, World!", MAX_MESSAGE_LEN - 1);
     strncpy(msg.timestamp, Message::get_current_timestamp().c_str(), MAX_TIMESTAMP_LEN - 1);
     
-    assert(strcmp(msg.user, "TestUser") == 0);
+    assert(strcmp(msg.username, "TestUser") == 0);
     assert(strcmp(msg.text, "Hello, World!") == 0);
     assert(strlen(msg.timestamp) > 0);
     
@@ -50,9 +50,9 @@ void test_max_lengths() {
     Message msg;
     
     std::string long_username(MAX_USERNAME_LEN + 10, 'A');
-    strncpy(msg.user, long_username.c_str(), MAX_USERNAME_LEN - 1);
-    msg.user[MAX_USERNAME_LEN - 1] = '\0';
-    assert(strlen(msg.user) < MAX_USERNAME_LEN);
+    strncpy(msg.username, long_username.c_str(), MAX_USERNAME_LEN - 1);
+    msg.username[MAX_USERNAME_LEN - 1] = '\0';
+    assert(strlen(msg.username) < MAX_USERNAME_LEN);
     
     std::string long_text(MAX_MESSAGE_LEN + 10, 'B');
     strncpy(msg.text, long_text.c_str(), MAX_MESSAGE_LEN - 1);
@@ -66,13 +66,13 @@ void test_message_copy() {
     std::cout << "Testing Message copy..." << std::endl;
     
     Message msg1;
-    strncpy(msg1.user, "Alice", MAX_USERNAME_LEN - 1);
+    strncpy(msg1.username, "Alice", MAX_USERNAME_LEN - 1);
     strncpy(msg1.text, "Test message", MAX_MESSAGE_LEN - 1);
     strncpy(msg1.timestamp, "2025-12-18T12:00:00Z", MAX_TIMESTAMP_LEN - 1);
     
     Message msg2 = msg1;
     
-    assert(strcmp(msg2.user, "Alice") == 0);
+    assert(strcmp(msg2.username, "Alice") == 0);
     assert(strcmp(msg2.text, "Test message") == 0);
     assert(strcmp(msg2.timestamp, "2025-12-18T12:00:00Z") == 0);
     
