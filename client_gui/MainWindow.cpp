@@ -3,6 +3,7 @@
 #include "ShmClient.h"
 #include <QMessageBox>
 #include <QScrollBar>
+#include <QDateTime>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -297,6 +298,14 @@ void MainWindow::on_send_clicked() {
         return;
     }
 
+    // Get current timestamp
+    QString timestamp = QDateTime::currentDateTime().toString("HH:mm:ss");
+    QString username = username_input_->text().trimmed();
+    
+    // Display message locally FIRST (so sender sees it immediately)
+    display_message(username, timestamp, text);
+
+    // Then send to server/other clients
     bool success = false;
     if (current_mode_ == SOCKET && socket_client_) {
         success = socket_client_->send_message(text);
