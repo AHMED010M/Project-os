@@ -147,6 +147,15 @@ bool set_socket_options(int socket_fd) {
         // Not critical, continue
     }
 
+     // Set receive timeout to prevent blocking indefinitely
+    struct timeval rcv_timeout;
+    rcv_timeout.tv_sec = 30;  // 30 second timeout
+    rcv_timeout.tv_usec = 0;
+    if (setsockopt(socket_fd, SOL_SOCKET, SO_RCVTIMEO, &rcv_timeout, sizeof(rcv_timeout)) < 0) {
+        LOG_WARN("Failed to set SO_RCVTIMEO: " << strerror(errno));
+        // Not critical, continue
+    }
+
     return true;
 }
 
