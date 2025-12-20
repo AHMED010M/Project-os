@@ -1,4 +1,4 @@
-    // MIT License
+// MIT License
 // Multi-threaded Chat System - Server Implementation
 // Copyright (c) 2025
 
@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <cstring>
 #include <algorithm>
+#include <memory>
 
 ChatServer::ChatServer(const std::string& host, int port)
     : host_(host), port_(port), server_fd_(-1), next_client_id_(1), running_(false) {
@@ -21,19 +22,16 @@ ChatServer::~ChatServer() {
 }
 
 bool ChatServer::start() {
-    // Create socket
     server_fd_ = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd_ < 0) {
         LOG_ERROR("Failed to create socket: " << strerror(errno));
         return false;
     }
 
-    // Set socket options
     if (!ChatUtils::set_socket_options(server_fd_)) {
         LOG_WARN("Failed to set socket options (non-critical)");
     }
 
-    // Bind socket
     struct sockaddr_in server_addr;
     memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
@@ -55,7 +53,6 @@ bool ChatServer::start() {
         return false;
     }
 
-    // Listen
     if (listen(server_fd_, 10) < 0) {
         LOG_ERROR("Listen failed: " << strerror(errno));
         close(server_fd_);
@@ -78,14 +75,12 @@ void ChatServer::stop() {
 
     running_ = false;
 
-    // Close server socket
     if (server_fd_ >= 0) {
         shutdown(server_fd_, SHUT_RDWR);
         close(server_fd_);
         server_fd_ = -1;
     }
 
-    // Close all client connections
     std::lock_guard<std::mutex> lock(clients_mutex_);
     for (auto& pair : clients_) {
         if (pair.second.socket_fd >= 0) {
@@ -113,7 +108,10 @@ void ChatServer::accept_loop() {
             break;
         }
 
-        // Get client info
+        if (!ChatUtils::set_socket_options(client_fd)) {
+            LOG_WARN("Failed to set client socket options");
+        }
+
         char client_ip[INET_ADDRSTRLEN];
         inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, INET_ADDRSTRLEN);
         int client_port = ntohs(client_addr.sin_port);
@@ -121,11 +119,11 @@ void ChatServer::accept_loop() {
         int client_id = next_client_id_++;
         LOG_INFO("Client connected: ID " << client_id << " from " << client_ip << ":" << client_port);
 
-        // Create client handler thread
-        ClientHandler* handler = new ClientHandler(client_fd, client_id, this);
+        std::unique_ptr<ClientHandler> handler(new ClientHandler(client_fd, client_id, this));
+        ClientHandler* handler_ptr = handler.release();
         
         std::lock_guard<std::mutex> lock(clients_mutex_);
-        clients_[client_id] = ClientInfo{client_fd, "", std::thread(&ClientHandler::run, handler)};
+        clients_[client_id] = ClientInfo{client_fd, "", std::thread(&ClientHandler::run, handler_ptr)};
     }
 }
 
@@ -137,7 +135,7 @@ void ChatServer::broadcast_message(const Message& msg, int exclude_client_id) {
 
     for (auto& pair : clients_) {
         if (pair.first == exclude_client_id) {
-            continue;  // Don't send to sender
+            continue;
         }
 
         if (!ChatUtils::send_message(pair.second.socket_fd, msg)) {
@@ -164,6 +162,7 @@ void ChatServer::remove_client(int client_id) {
         LOG_INFO("Client disconnected: ID " << client_id << " (" << it->second.username << ")");
         
         if (it->second.socket_fd >= 0) {
+            shutdown(it->second.socket_fd, SHUT_RDWR);
             close(it->second.socket_fd);
         }
         
