@@ -1,4 +1,5 @@
-// MIT License
+96
+    // MIT License
 // Multi-threaded Chat System - Server Implementation
 // Copyright (c) 2025
 
@@ -93,7 +94,7 @@ void ChatServer::stop() {
             close(pair.second.socket_fd);
         }
         if (pair.second.handler_thread.joinable()) {
-            pair.second.handler_thread.detach();
+            pair.second.handler_thread.join();
         }
     }
     clients_.clear();
@@ -168,7 +169,7 @@ void ChatServer::remove_client(int client_id) {
         }
         
         if (it->second.handler_thread.joinable()) {
-            it->second.handler_thread.detach();
+            it->second.handler_thread.join();
         }
         
         clients_.erase(it);
