@@ -24,7 +24,6 @@ void ClientHandler::run() {
     if (!receive_username()) {
         LOG_ERROR("Failed to receive username from client " << client_id_);
         server_->remove_client(client_id_);
-        delete this;
         return;
     }
 
@@ -36,7 +35,6 @@ void ClientHandler::run() {
 
     // Cleanup
     server_->remove_client(client_id_);
-    delete this;
 }
 
 bool ClientHandler::receive_username() {
