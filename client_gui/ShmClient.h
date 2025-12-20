@@ -5,14 +5,15 @@
 #include <QString>
 #include <atomic>
 #include <thread>
+#include <cstddef>
 #include "../shared/protocol.h"
 
-const size_t SHM_BUFFER_SIZE = 64;
+const std::size_t SHM_BUFFER_SIZE = 64;
 
 struct ShmBuffer {
     Message messages[SHM_BUFFER_SIZE];
-    size_t write_index;
-    size_t read_index;
+    std::size_t write_index;
+    std::size_t read_index;
 };
 
 class ShmClient : public QObject {
@@ -42,7 +43,7 @@ private:
     QString username_;
     int shm_fd_;
     ShmBuffer* shm_buffer_;
-    size_t last_read_index_;
+    std::size_t last_read_index_;
 
     std::atomic<bool> joined_;
     std::atomic<bool> should_stop_;

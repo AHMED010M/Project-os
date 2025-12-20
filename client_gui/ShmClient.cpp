@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <semaphore.h>
 #include <cstring>
+#include <cstddef>
 #include <QDebug>
 
 ShmClient::ShmClient(QObject* parent)
@@ -71,11 +72,18 @@ bool ShmClient::send_message(const QString& text) {
     sem_wait((sem_t*)write_sem_);
 
     Message msg;
-    strncpy(msg.username, username_.toStdString().c_str(), MAX_USERNAME_LEN - 1);
-    strncpy(msg.timestamp, Message::get_current_timestamp().c_str(), MAX_TIMESTAMP_LEN - 1);
-    strncpy(msg.text, text.toStdString().c_str(), MAX_MESSAGE_LEN - 1);
+    std::string username_str = username_.toStdString();
+    std::string text_str = text.toStdString();
+    std::string timestamp = Message::get_current_timestamp();
+    
+    strncpy(msg.username, username_str.c_str(), MAX_USERNAME_LEN - 1);
+    msg.username[MAX_USERNAME_LEN - 1] = '\0';
+    strncpy(msg.timestamp, timestamp.c_str(), MAX_TIMESTAMP_LEN - 1);
+    msg.timestamp[MAX_TIMESTAMP_LEN - 1] = '\0';
+    strncpy(msg.text, text_str.c_str(), MAX_MESSAGE_LEN - 1);
+    msg.text[MAX_MESSAGE_LEN - 1] = '\0';
 
-    size_t write_idx = shm_buffer_->write_index % SHM_BUFFER_SIZE;
+    std::size_t write_idx = shm_buffer_->write_index % SHM_BUFFER_SIZE;
     shm_buffer_->messages[write_idx] = msg;
     shm_buffer_->write_index++;
 
@@ -87,10 +95,10 @@ void ShmClient::read_loop() {
     while (!should_stop_) {
         sem_wait((sem_t*)read_sem_);
 
-        size_t current_write_index = shm_buffer_->write_index;
+        std::size_t current_write_index = shm_buffer_->write_index;
 
         while (last_read_index_ < current_write_index) {
-            size_t read_idx = last_read_index_ % SHM_BUFFER_SIZE;
+            std::size_t read_idx = last_read_index_ % SHM_BUFFER_SIZE;
             Message msg = shm_buffer_->messages[read_idx];
 
             if (QString::fromUtf8(msg.username) != username_) {
@@ -119,14 +127,16 @@ bool ShmClient::create_or_open_shm(const QString& shm_name) {
         return false;
     }
 
-    if (ftruncate(shm_fd_, sizeof(ShmBuffer)) < 0) {
+    const std::size_t buffer_size = sizeof(ShmBuffer);
+    
+    if (ftruncate(shm_fd_, static_cast<off_t>(buffer_size)) < 0) {
         close(shm_fd_);
         return false;
     }
 
-    shm_buffer_ = (ShmBuffer*)mmap(nullptr, sizeof(ShmBuffer),
+    shm_buffer_ = static_cast<ShmBuffer*>(mmap(nullptr, buffer_size,
                                     PROT_READ | PROT_WRITE,
-                                    MAP_SHARED, shm_fd_, 0);
+                                    MAP_SHARED, shm_fd_, 0));
     
     if (shm_buffer_ == MAP_FAILED) {
         close(shm_fd_);
@@ -134,7 +144,11 @@ bool ShmClient::create_or_open_shm(const QString& shm_name) {
     }
 
     if (shm_buffer_->write_index == 0 && shm_buffer_->read_index == 0) {
-        std::memset(shm_buffer_, 0, sizeof(ShmBuffer));
+        shm_buffer_->write_index = 0;
+        shm_buffer_->read_index = 0;
+        for (std::size_t i = 0; i < SHM_BUFFER_SIZE; ++i) {
+            shm_buffer_->messages[i].clear();
+        }
     }
 
     return true;
