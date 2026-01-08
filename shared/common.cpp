@@ -5,6 +5,7 @@
 #include "common.h"
 #include <fcntl.h>
 #include <sys/time.h>
+#include <cstddef>
 
 namespace ChatUtils {
 
@@ -15,17 +16,15 @@ bool send_message(int socket_fd, const Message& msg) {
     }
 
     const char* data = reinterpret_cast<const char*>(&msg);
-    size_t total_sent = 0;
-    size_t total_size = sizeof(Message);
+    std::size_t total_sent = 0;
+    std::size_t total_size = sizeof(Message);
 
-    // Send all data, handling partial sends
     while (total_sent < total_size) {
         ssize_t sent = send(socket_fd, data + total_sent, 
                            total_size - total_sent, MSG_NOSIGNAL);
         
         if (sent < 0) {
             if (errno == EINTR) {
-                // Interrupted by signal, retry
                 continue;
             }
             LOG_ERROR("Send failed: " << strerror(errno));
@@ -37,7 +36,7 @@ bool send_message(int socket_fd, const Message& msg) {
             return false;
         }
         
-        total_sent += sent;
+        total_sent += static_cast<std::size_t>(sent);
     }
 
     return true;
@@ -49,7 +48,6 @@ bool recv_message(int socket_fd, Message& msg, int timeout_sec) {
         return false;
     }
 
-    // Use select for timeout if specified
     if (timeout_sec > 0) {
         fd_set read_fds;
         FD_ZERO(&read_fds);
@@ -69,24 +67,24 @@ bool recv_message(int socket_fd, Message& msg, int timeout_sec) {
         }
         
         if (select_result == 0) {
-            // Timeout occurred
             return false;
         }
     }
 
     char* data = reinterpret_cast<char*>(&msg);
-    size_t total_received = 0;
-    size_t total_size = sizeof(Message);
+    std::size_t total_received = 0;
+    std::size_t total_size = sizeof(Message);
 
-    // Receive all data, handling partial receives
     while (total_received < total_size) {
         ssize_t received = recv(socket_fd, data + total_received, 
                                total_size - total_received, 0);
         
         if (received < 0) {
             if (errno == EINTR) {
-                // Interrupted by signal, retry
                 continue;
+            }
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                return false;
             }
             if (errno != ECONNRESET) {
                 LOG_ERROR("Receive failed: " << strerror(errno));
@@ -95,9 +93,7 @@ bool recv_message(int socket_fd, Message& msg, int timeout_sec) {
         }
         
         if (received == 0) {
-            // Connection closed by peer
             if (total_received == 0) {
-                // Clean disconnect
                 return false;
             } else {
                 LOG_WARN("Connection closed during receive");
@@ -105,10 +101,9 @@ bool recv_message(int socket_fd, Message& msg, int timeout_sec) {
             }
         }
         
-        total_received += received;
+        total_received += static_cast<std::size_t>(received);
     }
 
-    // Validate received message
     if (!msg.is_valid()) {
         LOG_WARN("Received invalid message");
         return false;
@@ -133,30 +128,24 @@ bool set_nonblocking(int socket_fd) {
 }
 
 bool set_socket_options(int socket_fd) {
-    // Enable address reuse (allows quick restart)
     int opt = 1;
     if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
         LOG_WARN("Failed to set SO_REUSEADDR: " << strerror(errno));
-        // Not critical, continue
     }
 
-    // Enable keepalive (detect dead connections)
     opt = 1;
     if (setsockopt(socket_fd, SOL_SOCKET, SO_KEEPALIVE, &opt, sizeof(opt)) < 0) {
         LOG_WARN("Failed to set SO_KEEPALIVE: " << strerror(errno));
-        // Not critical, continue
     }
 
-     // Set receive timeout to prevent blocking indefinitely
     struct timeval rcv_timeout;
-    rcv_timeout.tv_sec = 30;  // 30 second timeout
+    rcv_timeout.tv_sec = 30;
     rcv_timeout.tv_usec = 0;
     if (setsockopt(socket_fd, SOL_SOCKET, SO_RCVTIMEO, &rcv_timeout, sizeof(rcv_timeout)) < 0) {
         LOG_WARN("Failed to set SO_RCVTIMEO: " << strerror(errno));
-        // Not critical, continue
     }
 
     return true;
 }
 
-} // namespace ChatUtils
+}
